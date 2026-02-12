@@ -1,0 +1,17 @@
+[
+    { "id": 1, "nombre": "Chairo de Tunales", "precio": 18.90, "descripcion": "Sopa tradicional con chuño y carne de llama", "emoji": "🍲", "imagen": "html/data/imagenes_product/1.jpg" },
+    { "id": 2, "nombre": "Soltero de Queso", "precio": 22.50, "descripcion": "Habas tiernas con queso fresco y choclo", "emoji": "🧀", "imagen": "html/data/imagenes_product/2.jpg" },
+    { "id": 3, "nombre": "Ocopa Arequipeña", "precio": 24.00, "descripcion": "Salsa de huacatay con papas y queso", "emoji": "🥔", "imagen": "html/data/imagenes_product/3.jpg" },
+    { "id": 4, "nombre": "Rocoto Relleno", "precio": 26.80, "descripcion": "Rocoto relleno con carne y queso", "emoji": "🌶️", "imagen": "html/data/imagenes_product/4.jpg" },
+    { "id": 5, "nombre": "Pastel de Papa", "precio": 20.50, "descripcion": "Pastel de papa con carne molida", "emoji": "🥙", "imagen": "html/data/imagenes_product/5.jpg" },
+    { "id": 6, "nombre": "Adobo Arequipeño", "precio": 32.00, "descripcion": "Cerdo marinado con chicha de jora", "emoji": "🍖", "imagen": "html/data/imagenes_product/6.jpg" },
+    { "id": 7, "nombre": "Chicharrón de Chancho", "precio": 28.90, "descripcion": "Cerdo frito con camote y sarza", "emoji": "🥓", "imagen": "html/data/imagenes_product/7.jpg" },
+    { "id": 8, "nombre": "Cuy Chactado", "precio": 45.00, "descripcion": "Cuy frito tradicional arequipeño", "emoji": "🐭", "imagen": "html/data/imagenes_product/8.jpg" },
+    { "id": 9, "nombre": "Zambo Racacho", "precio": 35.00, "descripcion": "Plato típico con zambo y mote", "emoji": "🎃", "imagen": "html/data/imagenes_product/9.jpg" },
+    { "id": 10, "nombre": "Timpo de Tunales", "precio": 38.50, "descripcion": "Sopa de miércoles santo con carne", "emoji": "🍜", "imagen": "html/data/imagenes_product/10.jpg" },
+    { "id": 11, "nombre": "Pepián de Cordero", "precio": 42.00, "descripcion": "Cordero en salsa de ají y hierbas", "emoji": "🐑", "imagen": "html/data/imagenes_product/11.jpg" },
+    { "id": 12, "nombre": "Causa Arequipeña", "precio": 19.90, "descripcion": "Causa rellena con pollo o atún", "emoji": "🥚", "imagen": "html/data/imagenes_product/12.jpg" },
+    { "id": 13, "nombre": "Enrollado de Pollo", "precio": 23.50, "descripcion": "Pollo enrollado con aceitunas", "emoji": "🍗", "imagen": "html/data/imagenes_product/13.jpg" },
+    { "id": 14, "nombre": "Chupe de Viernes", "precio": 30.00, "descripcion": "Chupe tradicional de los viernes", "emoji": "🍲", "imagen": "html/data/imagenes_product/14.jpg" },
+    { "id": 15, "nombre": "Queso Helado", "precio": 12.90, "descripcion": "Helado tradicional de queso", "emoji": "🍦", "imagen": "html/data/imagenes_product/15.jpg" }
+]

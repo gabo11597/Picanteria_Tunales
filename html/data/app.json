@@ -1,0 +1,31 @@
+{
+  "nombre": "Tienda",
+  "whatsapp": "51993732579",
+  "whatsappMensajeBase": "Hola, quiero hacer un pedido",
+  "empresa": {
+    "slogan": "Tradición 0",
+    "direccion": "Calle Tunales 124, Arequipa",
+    "telefono": "+51 54 282661",
+    "email": "info@picanterialostunales.com",
+    "horarios": {
+      "lunes_viernes": "11:00-22:00",
+      "sabado_domingo": "10:00-23:00"
+    }
+  },
+  "social": {
+    "instagram": "@picanterialostunales",
+    "facebook": "picanterialostunales",
+    "tiktok": "@picanterialostunales"
+  },
+  "ubicacion": {
+    "coordenadas": {
+      "lat": -16.409158,
+      "lng": -71.537556
+    },
+    "zoom": 20
+  },
+  "nosotros": {
+    "subtitulo": "eslogan",
+    "historia": "Somos una picantería familiar con más de 70 años de tradición. Desde nuestros inicios en 1950, nos hemos dedicado a preservar y compartir la rica tradición culinaria arequipeña."
+  }
+}

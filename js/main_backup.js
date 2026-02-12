@@ -1,209 +1,355 @@
 // PICANTERÍA LOS TUNALES - JAVASCRIPT PRINCIPAL
 
-let currentTab = "tienda";
+let currentTab = 'tienda';
 let cart = [];
 let cartCount = 0;
 
-document.addEventListener("DOMContentLoaded", async function () {
-  console.log("🏪 Iniciando...");
-  await loadConfigData();
-  initCarousel();
-  loadProducts();
-  createFloatingCart();
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🏪 Picantería Los Tunales - Iniciando...');
+    initCarousel();
+    loadProducts();
+    createFloatingCart();
 });
 
-async function loadConfigData() {
-  try {
-    const [app, tema] = await Promise.all([
-      fetch("html/data/app.json", { cache: "no-store" }).then((r) => r.json()),
-      fetch("html/data/tema.json", { cache: "no-store" }).then((r) => r.json()),
-    ]);
-
-    window.sharedData = {
-      nombre: app?.nombre,
-      whatsapp: app?.whatsapp,
-      whatsappMensajeBase: app?.whatsappMensajeBase,
-    };
-    window.empresaData = app?.empresa || {};
-    window.socialData = app?.social || {};
-    window.ubicacionData = app?.ubicacion || {};
-    window.temaData = tema || {};
-    window.nosotrosData = app?.nosotros || {};
-
-    if (!window.ubicacionData.marcador && window.sharedData?.nombre) {
-      window.ubicacionData.marcador = window.sharedData.nombre;
-    }
-
-    if (window.sharedData?.whatsapp) {
-      window.socialData.whatsapp = window.sharedData.whatsapp;
-    }
-
-    const siteTitleEl = document.getElementById("site-title");
-    if (siteTitleEl && window.sharedData?.nombre) {
-      siteTitleEl.textContent = window.sharedData.nombre;
-    }
-    if (window.sharedData?.nombre) {
-      document.title = window.sharedData.nombre;
-      console.log(` ${window.sharedData.nombre} - Listo`);
-    }
-    const siteTaglineEl = document.getElementById("site-tagline");
-    if (siteTaglineEl) {
-      siteTaglineEl.textContent = window.empresaData?.slogan || siteTaglineEl.textContent;
-    }
-
-    console.log("Datos cargados:", { app, tema });
-
-    // Ocultar spinner simple cuando carga
-    const loader = document.getElementById("simple-loader");
-    if (loader) {
-      loader.style.display = "none";
-    }
-  } catch (error) {
-    console.error("Error cargando configuración:", error);
-    console.warn("Usando valores por defecto - revisa archivos JSON");
-  }
-}
-
 function initCarousel() {
-  const tabButtons = document.querySelectorAll(".tab-btn");
-
-  tabButtons.forEach((button) => {
-    button.addEventListener("click", function () {
-      const tabId = this.getAttribute("data-tab");
-      if (tabId === currentTab) return;
-
-      // Remover active de todos
-      document
-        .querySelectorAll(".tab-btn")
-        .forEach((btn) => btn.classList.remove("active"));
-      document
-        .querySelectorAll(".tab-content")
-        .forEach((content) => content.classList.remove("active"));
-
-      // Agregar active al seleccionado
-      this.classList.add("active");
-      document.getElementById(tabId).classList.add("active");
-
-      currentTab = tabId;
-
-      // Cargar contenido según tab
-      if (tabId === "tienda") {
-        loadProducts();
-      } else if (tabId === "nosotros") {
-        loadNosotros();
-      } else if (tabId === "ubicacion") {
-        loadUbicacion();
-      }
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
+            if (tabId === currentTab) return;
+            
+            // Remover active de todos
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Agregar active al seleccionado
+            this.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            
+            currentTab = tabId;
+            
+            // Cargar contenido según tab
+            if (tabId === 'tienda') {
+                loadProducts();
+            } else if (tabId === 'nosotros') {
+                loadNosotros();
+            } else if (tabId === 'ubicacion') {
+                loadUbicacion();
+            }
+        });
     });
-  });
 }
 
 async function loadProducts() {
-  const tiendaTab = document.getElementById("tienda");
-  if (!tiendaTab) return;
-
-  console.log("Cargando productos...");
-
-  // Cachear productos para evitar fetch repetido
-  if (!window.productos) {
-    let productos;
+    const tiendaTab = document.getElementById('tienda');
+    if (!tiendaTab) return;
+    
+    console.log('🍽️ Cargando productos...');
+    
     try {
-      const response = await fetch("html/data/productos.json", { cache: "no-store" });
-      console.log("Response:", response);
-      productos = await response.json();
-      console.log("Productos cargados:", productos.length);
-      console.log("Primer producto:", productos[0]);
-    } catch (error) {
-      console.error("Error cargando productos:", error);
-      return;
-    }
-    window.productos = productos;
-  } else {
-    console.log("Productos ya cargados desde cache");
-  }
-
-  const productos = window.productos;
-
-  let productosHTML = `
-        <div class="tienda-container">
-            <div class="shop-header">
-                <h2>Nuestra Picantería</h2>
-                <p>15 platos tradicionales arequipeños</p>
-                <div class="view-controls">
-                    <button class="view-btn active" data-columns="1" onclick="changeColumns(1)">
-                        <i class="fas fa-list"></i> 1 Columna
-                    </button>
-                    <button class="view-btn" data-columns="2" onclick="changeColumns(2)">
-                        <i class="fas fa-th-large"></i> 2 Columnas
-                    </button>
-                    <button class="view-btn" data-columns="3" onclick="changeColumns(3)">
-                        <i class="fas fa-th"></i> 3 Columnas
-                    </button>
-                </div>
-            </div>
-            <div class="products-grid" id="products-grid">
-    `;
-
-  productos.forEach((producto) => {
-    productosHTML += `
-            <div class="product-card">
-                <div class="product-image ${producto.imagen ? "has-image" : ""}">
-                    ${
-                      producto.imagen
-                        ? `<img src="${producto.imagen}" alt="${producto.nombre}" loading="lazy" onload="this.parentElement.classList.remove('img-loading'); this.style.opacity='1'" onerror="this.parentElement.classList.remove('img-loading')">`
-                        : `<span class="product-emoji">${producto.emoji}</span>`
-                    }
-                </div>
-                <div class="product-info">
-                    <h3 class="product-name">${producto.nombre}</h3>
-                    <p class="product-price">S/ ${producto.precio.toFixed(2)}</p>
-                    <p class="product-description">${producto.descripcion}</p>
-                    <div class="product-actions">
-                        <div class="quantity-control">
-                            <button class="btn-minus" onclick="changeQuantity(${producto.id}, -1)">-</button>
-                            <span class="quantity" id="qty-${producto.id}">1</span>
-                            <button class="btn-plus" onclick="changeQuantity(${producto.id}, 1)">+</button>
-                        </div>
-                        <button class="btn-add-cart" onclick="addToCart(${producto.id})">
-                            <i class="fas fa-shopping-cart"></i>
+        // Cargar productos desde el JSON
+        const response = await fetch('html/data/productos.json');
+        console.log('📁 Respuesta fetch:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('📦 Datos cargados:', data);
+        
+        const productos = data.products;
+        console.log('🛒 Productos encontrados:', productos.length);
+        
+        // Mostrar mensaje de carga
+        tiendaTab.innerHTML = '<div class="loading">Cargando productos...</div>';
+        
+        let productosHTML = `
+            <div class="tienda-container">
+                <div class="shop-header">
+                    <h2>Nuestra Picantería</h2>
+                    <p>${productos.length} platos tradicionales arequipeños</p>
+                    <div class="view-controls">
+                        <button class="view-btn active" data-columns="1" onclick="changeColumns(1)">
+                            <i class="fas fa-list"></i> 1 Columna
+                        </button>
+                        <button class="view-btn" data-columns="2" onclick="changeColumns(2)">
+                            <i class="fas fa-th-large"></i> 2 Columnas
+                        </button>
+                        <button class="view-btn" data-columns="3" onclick="changeColumns(3)">
+                            <i class="fas fa-th"></i> 3 Columnas
                         </button>
                     </div>
                 </div>
+                <div class="products-grid" id="products-grid">
+        `;
+        
+        productos.forEach(producto => {
+            productosHTML += `
+                <div class="product-card">
+                    <div class="product-image">
+                        <span class="product-emoji">${producto.emoji}</span>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-name">${producto.nombre}</h3>
+                        <p class="product-price">S/ ${producto.precio.toFixed(2)}</p>
+                        <p class="product-description">${producto.descripcion}</p>
+                        ${producto.categoria ? `<span class="product-category">${producto.categoria}</span>` : ''}
+                        <div class="product-actions">
+                            <div class="quantity-control">
+                                <button class="btn-minus" onclick="changeQuantity(${producto.id}, -1)">-</button>
+                                <span class="quantity" id="qty-${producto.id}">1</span>
+                                <button class="btn-plus" onclick="changeQuantity(${producto.id}, 1)">+</button>
+                            </div>
+                            <button class="btn-add-cart" onclick="addToCart(${producto.id})">
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        productosHTML += `
+                </div>
             </div>
         `;
-  });
-
-  productosHTML += `
+        
+        tiendaTab.innerHTML = productosHTML;
+        
+        // Agregar estilos adicionales para categorías
+        if (!document.getElementById('product-styles')) {
+            const style = document.createElement('style');
+            style.id = 'product-styles';
+            style.textContent = `
+                .tienda-container {
+                    padding: 20px;
+                    min-height: 500px;
+                }
+                
+                .shop-header {
+                    text-align: center;
+                    margin-bottom: 25px;
+                }
+                
+                .shop-header h2 {
+                    font-size: 1.4em;
+                    font-weight: 600;
+                    background: var(--gradient-accent);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    margin-bottom: 8px;
+                }
+                
+                .shop-header p {
+                    color: var(--text-secondary);
+                    font-size: 0.95em;
+                }
+                
+                .view-controls {
+                    margin-top: 15px;
+                    display: flex;
+                    gap: 10px;
+                    justify-content: center;
+                    flex-wrap: wrap;
+                }
+                
+                .view-btn {
+                    padding: 8px 16px;
+                    border: 1px solid var(--border-color);
+                    background: var(--card-bg);
+                    color: var(--text-primary);
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    font-size: 0.9em;
+                }
+                
+                .view-btn:hover {
+                    background: var(--hover-bg);
+                    transform: translateY(-1px);
+                }
+                
+                .view-btn.active {
+                    background: var(--gradient-primary);
+                    color: white;
+                    border-color: transparent;
+                }
+                
+                .products-grid {
+                    display: grid;
+                    gap: 20px;
+                    grid-template-columns: repeat(1, 1fr);
+                    transition: all 0.3s ease;
+                }
+                
+                .products-grid.columns-2 {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+                
+                .products-grid.columns-3 {
+                    grid-template-columns: repeat(3, 1fr);
+                }
+                
+                .product-card {
+                    background: var(--card-bg);
+                    border-radius: 12px;
+                    padding: 20px;
+                    box-shadow: var(--shadow-sm);
+                    transition: all 0.3s ease;
+                    border: 1px solid var(--border-color);
+                }
+                
+                .product-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: var(--shadow-md);
+                }
+                
+                .product-image {
+                    text-align: center;
+                    margin-bottom: 15px;
+                }
+                
+                .product-emoji {
+                    font-size: 3em;
+                    display: block;
+                }
+                
+                .product-info {
+                    text-align: center;
+                }
+                
+                .product-name {
+                    font-size: 1.1em;
+                    font-weight: 600;
+                    margin-bottom: 8px;
+                    color: var(--text-primary);
+                }
+                
+                .product-price {
+                    font-size: 1.2em;
+                    font-weight: 700;
+                    color: var(--accent-color);
+                    margin-bottom: 8px;
+                }
+                
+                .product-description {
+                    font-size: 0.9em;
+                    color: var(--text-secondary);
+                    margin-bottom: 12px;
+                    line-height: 1.4;
+                }
+                
+                .product-category {
+                    display: inline-block;
+                    background: var(--gradient-accent);
+                    color: white;
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    font-size: 0.8em;
+                    margin-bottom: 12px;
+                }
+                
+                .product-actions {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 12px;
+                    margin-top: 15px;
+                }
+                
+                .quantity-control {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    background: var(--input-bg);
+                    border-radius: 8px;
+                    padding: 4px;
+                }
+                
+                .btn-minus, .btn-plus {
+                    width: 28px;
+                    height: 28px;
+                    border: none;
+                    background: var(--button-bg);
+                    color: var(--text-primary);
+                    border-radius: 6px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.2s ease;
+                }
+                
+                .btn-minus:hover, .btn-plus:hover {
+                    background: var(--hover-bg);
+                }
+                
+                .quantity {
+                    min-width: 30px;
+                    text-align: center;
+                    font-weight: 600;
+                    color: var(--text-primary);
+                }
+                
+                .btn-add-cart {
+                    background: var(--gradient-primary);
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+                
+                .btn-add-cart:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                }
+                
+                .loading {
+                    text-align: center;
+                    padding: 40px;
+                    color: var(--text-secondary);
+                    font-size: 1.1em;
+                }
+                
+                @media (max-width: 768px) {
+                    .products-grid.columns-2,
+                    .products-grid.columns-3 {
+                        grid-template-columns: 1fr;
+                    }
+                    
+                    .view-controls {
+                        flex-direction: column;
+                        align-items: center;
+                    }
+                    
+                    .view-btn {
+                        width: 200px;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+    } catch (error) {
+        console.error('Error cargando productos:', error);
+        tiendaTab.innerHTML = `
+            <div class="tienda-container">
+                <div class="error-message">
+                    <h3>Error al cargar los productos</h3>
+                    <p>No se pudieron cargar los platos desde la base de datos.</p>
+                    <button onclick="loadProducts()" class="btn-retry">Reintentar</button>
+                </div>
             </div>
-        </div>
-    `;
-
-  tiendaTab.innerHTML = productosHTML;
-
-  const defaultCols = window.innerWidth >= 992 ? 3 : 1;
-  changeColumns(defaultCols, true);
-
-  // Agregar estilos de productos
-  if (!document.getElementById("product-styles")) {
-    const style = document.createElement("style");
-    style.id = "product-styles";
-    style.textContent = `
-            .tienda-container {
-                padding: 20px;
-                min-height: 500px;
-            }
-            
-            .shop-header {
-                text-align: center;
-                margin-bottom: 25px;
-            }
-            
-            .shop-header h2 {
-                font-size: 1.4em;
-                font-weight: 600;
-                background: var(--gradient-accent);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
+        `;
+    }
+}
                 background-clip: text;
                 margin-bottom: 5px;
             }
@@ -212,17 +358,6 @@ async function loadProducts() {
                 color: var(--text-gray);
                 font-size: 0.8em;
                 margin-bottom: 15px;
-            }
-            
-            .logo-placeholder {
-                margin-right: 15px;
-            }
-
-            .logo-img {
-                height: 50px;
-                width: auto;
-                object-fit: contain;
-                filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
             }
             
             .view-controls {
@@ -324,40 +459,6 @@ async function loadProducts() {
                 align-items: center;
                 justify-content: center;
                 font-size: 2.5em;
-                position: relative;
-                overflow: hidden;
-                border-radius: 6px;
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
-            }
-
-            .product-image.has-image {
-                background: none;
-                box-shadow: none;
-            }
-
-            .img-loading::after {
-                content: "";
-                position: absolute;
-                inset: 0;
-                background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.20), rgba(255,255,255,0.08));
-                transform: translateX(-100%);
-                animation: shimmer 0.8s infinite;
-            }
-
-            @keyframes shimmer {
-                100% { transform: translateX(100%); }
-            }
-
-            .product-image img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                display: block;
-                opacity: 0;
-                transition: opacity 0.3s ease;
-                border-radius: 6px;
-                border: 1px solid rgba(255, 255, 255, 0.1);
             }
             
             .product-emoji {
@@ -475,124 +576,61 @@ async function loadProducts() {
                 }
             }
         `;
-    document.head.appendChild(style);
-  }
-
-  // Guardar productos para el carrito
-  window.productos = productos;
+        document.head.appendChild(style);
+    }
+    
+    // Guardar productos para el carrito
+    window.productos = productos;
 }
 
-  // Estilos del loader inicial
-  if (!document.getElementById("loader-styles")) {
-    const loaderStyle = document.createElement("style");
-    loaderStyle.id = "loader-styles";
-    loaderStyle.textContent = `
-        #initial-loader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, #ff6b6b, #ffa726, #42a5f5);
-            background-size: 400% 400%;
-            animation: gradientShift 3s ease infinite;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            transition: opacity 0.5s ease;
-        }
-
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .loader-content {
-            text-align: center;
-            color: white;
-        }
-
-        .loader-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .loader-content h2 {
-            font-size: 1.5em;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .loader-content p {
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
-    `;
-    document.head.appendChild(loaderStyle);
-  }
-
 function changeQuantity(productId, change) {
-  const qtyElement = document.getElementById(`qty-${productId}`);
-  let currentQty = parseInt(qtyElement.textContent);
-  let newQty = Math.max(1, currentQty + change);
-  qtyElement.textContent = newQty;
+    const qtyElement = document.getElementById(`qty-${productId}`);
+    let currentQty = parseInt(qtyElement.textContent);
+    let newQty = Math.max(1, currentQty + change);
+    qtyElement.textContent = newQty;
 }
 
 function addToCart(productId) {
-  const producto = window.productos.find((p) => p.id === productId);
-  const quantity = parseInt(
-    document.getElementById(`qty-${productId}`).textContent,
-  );
-
-  for (let i = 0; i < quantity; i++) {
-    cart.push({
-      id: producto.id,
-      nombre: producto.nombre,
-      precio: producto.precio,
-      emoji: producto.emoji,
-    });
-  }
-
-  cartCount += quantity;
-  updateCartCount();
-
-  // Resetear cantidad
-  document.getElementById(`qty-${productId}`).textContent = "1";
-
-  showNotification(`${quantity} x ${producto.nombre} agregado(s) al carrito`);
+    const producto = window.productos.find(p => p.id === productId);
+    const quantity = parseInt(document.getElementById(`qty-${productId}`).textContent);
+    
+    for (let i = 0; i < quantity; i++) {
+        cart.push({
+            id: producto.id,
+            nombre: producto.nombre,
+            precio: producto.precio,
+            emoji: producto.emoji
+        });
+    }
+    
+    cartCount += quantity;
+    updateCartCount();
+    
+    // Resetear cantidad
+    document.getElementById(`qty-${productId}`).textContent = '1';
+    
+    showNotification(`${quantity} x ${producto.nombre} agregado(s) al carrito`);
 }
 
 function updateCartCount() {
-  const cartCountElement = document.querySelector(".cart-count");
-  if (cartCountElement) {
-    cartCountElement.textContent = cartCount;
-    cartCountElement.style.display = cartCount > 0 ? "flex" : "none";
-  }
+    const cartCountElement = document.querySelector('.cart-count');
+    if (cartCountElement) {
+        cartCountElement.textContent = cartCount;
+        cartCountElement.style.display = cartCount > 0 ? 'flex' : 'none';
+    }
 }
 
 function createFloatingCart() {
-  const floatingCart = document.createElement("div");
-  floatingCart.className = "floating-cart";
-  floatingCart.innerHTML = `
+    const floatingCart = document.createElement('div');
+    floatingCart.className = 'floating-cart';
+    floatingCart.innerHTML = `
         <div class='cart-icon'>
             <i class='fas fa-shopping-cart'></i>
             <span class='cart-count'>0</span>
         </div>
     `;
-
-  floatingCart.style.cssText = `
+    
+    floatingCart.style.cssText = `
         position: fixed;
         bottom: 15px;
         right: 15px;
@@ -608,24 +646,24 @@ function createFloatingCart() {
         box-shadow: var(--shadow-glow);
         transition: var(--transition);
     `;
-
-  floatingCart.addEventListener("mouseenter", () => {
-    floatingCart.style.transform = "scale(1.05)";
-  });
-
-  floatingCart.addEventListener("mouseleave", () => {
-    floatingCart.style.transform = "scale(1)";
-  });
-
-  floatingCart.addEventListener("click", () => {
-    showCartDetails();
-  });
-
-  document.body.appendChild(floatingCart);
-
-  // Estilos del carrito
-  const cartStyle = document.createElement("style");
-  cartStyle.textContent = `
+    
+    floatingCart.addEventListener('mouseenter', () => {
+        floatingCart.style.transform = 'scale(1.05)';
+    });
+    
+    floatingCart.addEventListener('mouseleave', () => {
+        floatingCart.style.transform = 'scale(1)';
+    });
+    
+    floatingCart.addEventListener('click', () => {
+        showCartDetails();
+    });
+    
+    document.body.appendChild(floatingCart);
+    
+    // Estilos del carrito
+    const cartStyle = document.createElement('style');
+    cartStyle.textContent = `
         .floating-cart {
             animation: float 3s ease-in-out infinite;
         }
@@ -657,28 +695,28 @@ function createFloatingCart() {
             font-weight: 700;
         }
     `;
-  document.head.appendChild(cartStyle);
+    document.head.appendChild(cartStyle);
 }
 
 function showCartDetails() {
-  if (cart.length === 0) {
-    showNotification("El carrito está vacío");
-    return;
-  }
-
-  // Agrupar productos por id
-  const groupedCart = {};
-  cart.forEach((item) => {
-    if (!groupedCart[item.id]) {
-      groupedCart[item.id] = {
-        ...item,
-        quantity: 0,
-      };
+    if (cart.length === 0) {
+        showNotification('El carrito está vacío');
+        return;
     }
-    groupedCart[item.id].quantity++;
-  });
-
-  let cartHTML = `
+    
+    // Agrupar productos por id
+    const groupedCart = {};
+    cart.forEach(item => {
+        if (!groupedCart[item.id]) {
+            groupedCart[item.id] = {
+                ...item,
+                quantity: 0
+            };
+        }
+        groupedCart[item.id].quantity++;
+    });
+    
+    let cartHTML = `
         <div class="cart-modal">
             <div class="cart-header">
                 <h3>🛒 Tu Carrito</h3>
@@ -686,20 +724,15 @@ function showCartDetails() {
             </div>
             <div class="cart-items">
     `;
-
-  let total = 0;
-  Object.values(groupedCart).forEach((item) => {
-    const subtotal = item.precio * item.quantity;
-    total += subtotal;
-    cartHTML += `
+    
+    let total = 0;
+    Object.values(groupedCart).forEach(item => {
+        const subtotal = item.precio * item.quantity;
+        total += subtotal;
+        cartHTML += `
             <div class="cart-item" data-product-id="${item.id}">
                 <div class="item-info">
-                    ${(() => {
-                      const producto = window.productos.find(p => p.id === item.id);
-                      return producto && producto.imagen 
-                        ? `<img class="cart-thumb" src="${producto.imagen}" alt="Miniatura de ${item.nombre}">` 
-                        : `<span class="item-emoji">${item.emoji}</span>`;
-                    })()}
+                    <span class="item-emoji">${item.emoji}</span>
                     <div class="item-details">
                         <h4>${item.nombre}</h4>
                         <p>S/ ${item.precio.toFixed(2)} x ${item.quantity}</p>
@@ -718,44 +751,44 @@ function showCartDetails() {
                 </div>
             </div>
         `;
-  });
-
-  cartHTML += `
+    });
+    
+    cartHTML += `
             </div>
             <div class="cart-footer">
-                <div class="cart-summary">
+                <div class="cart-total">
                     <strong>Total: S/ ${total.toFixed(2)}</strong>
                 </div>
                 <div class="cart-actions">
                     <button class="btn-whatsapp" onclick="sendToWhatsApp()">
-                        <img class="wa-icon" src="html/data/ico/Whatsapp.svg" alt="WhatsApp"> Pedir por WhatsApp
+                        <i class="fas fa-whatsapp"></i> Pedir por WhatsApp
                     </button>
                     <button class="btn-clear" onclick="clearCart()">Vaciar</button>
                 </div>
             </div>
         </div>
     `;
-
-  showModal(cartHTML);
+    
+    showModal(cartHTML);
 }
 
 function showModal(content) {
-  const modal = document.createElement("div");
-  modal.className = "modal-overlay";
-  modal.innerHTML = `
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
         <div class="modal-backdrop" onclick="closeModal()"></div>
         <div class="modal-content">
             ${content}
         </div>
     `;
-
-  document.body.appendChild(modal);
-
-  // Estilos del modal
-  if (!document.getElementById("modal-styles")) {
-    const style = document.createElement("style");
-    style.id = "modal-styles";
-    style.textContent = `
+    
+    document.body.appendChild(modal);
+    
+    // Estilos del modal
+    if (!document.getElementById('modal-styles')) {
+        const style = document.createElement('style');
+        style.id = 'modal-styles';
+        style.textContent = `
             .modal-overlay {
                 position: fixed;
                 top: 0;
@@ -864,18 +897,9 @@ function showModal(content) {
                 flex: 1;
             }
             
-            .cart-thumb {
-                width: 40px;
-                height: 40px;
-                object-fit: cover;
-                border-radius: 4px;
-            }
-            
             .item-emoji {
                 font-size: 1.5em;
             }
-                        font-size: 1.5em;
-                    }
             
             .item-details h4 {
                 color: var(--text-light);
@@ -989,12 +1013,6 @@ function showModal(content) {
                 justify-content: center;
                 gap: 8px;
             }
-
-            .btn-whatsapp .wa-icon {
-                width: 18px;
-                height: 18px;
-                display: inline-block;
-            }
             
             .btn-whatsapp:hover {
                 transform: scale(1.02);
@@ -1016,110 +1034,90 @@ function showModal(content) {
                 color: white;
             }
         `;
-    document.head.appendChild(style);
-  }
+        document.head.appendChild(style);
+    }
 }
 
 function closeModal() {
-  const modal = document.querySelector(".modal-overlay");
-  if (modal) {
-    modal.remove();
-  }
+    const modal = document.querySelector('.modal-overlay');
+    if (modal) {
+        modal.remove();
+    }
 }
 
 function closeCartModal() {
-  closeModal();
+    closeModal();
 }
 
 function clearCart() {
-  cart = [];
-  cartCount = 0;
-  updateCartCount();
-  closeCartModal();
-  showNotification("Carrito vaciado");
+    cart = [];
+    cartCount = 0;
+    updateCartCount();
+    closeCartModal();
+    showNotification('Carrito vaciado');
 }
 
 function sendToWhatsApp() {
-  if (cart.length === 0) return;
-
-  // Agrupar productos
-  const groupedCart = {};
-  cart.forEach((item) => {
-    if (!groupedCart[item.id]) {
-      groupedCart[item.id] = {
-        ...item,
-        quantity: 0,
-      };
-    }
-    groupedCart[item.id].quantity++;
-  });
-
-  const businessName =
-    window.sharedData?.nombre || window.empresaData?.nombre || "Mi Negocio";
-  const baseMessage = window.sharedData?.whatsappMensajeBase || "";
-  let message = `*Pedido para ${businessName}*\n`;
-  message += baseMessage ? `${baseMessage}\n` : "";
-  message += `📋 _Detalles del pedido:_\n`;
-
-  let total = 0;
-  Object.values(groupedCart).forEach((item) => {
-    const subtotal = item.precio * item.quantity;
-    total += subtotal;
-    message += `- ${item.quantity}x *${item.nombre}* S/ ${subtotal.toFixed(2)}\n`;
-  });
-
-  message += `\n💰 *Total:* S/ ${total.toFixed(2)}\n`;
-  message += `¡Gracias por tu pedido! 😊`;
-
-  const whatsappNumber =
-    window.sharedData?.whatsapp || window.socialData?.whatsapp || "";
-  if (!whatsappNumber) return;
-  const whatsappURL = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-  window.open(whatsappURL, "_blank");
+    if (cart.length === 0) return;
+    
+    // Agrupar productos
+    const groupedCart = {};
+    cart.forEach(item => {
+        if (!groupedCart[item.id]) {
+            groupedCart[item.id] = {
+                ...item,
+                quantity: 0
+            };
+        }
+        groupedCart[item.id].quantity++;
+    });
+    
+    let message = '🏪 *PEDIDO PICANTERÍA LOS TUNALES*\n\n';
+    message += '📋 *Detalles del pedido:*\n\n';
+    
+    let total = 0;
+    Object.values(groupedCart).forEach(item => {
+        const subtotal = item.precio * item.quantity;
+        total += subtotal;
+        message += `• ${item.quantity}x ${item.nombre} - S/ ${subtotal.toFixed(2)}\n`;
+    });
+    
+    message += `\n💰 *Total: S/ ${total.toFixed(2)}*\n\n`;
+    message += '📍 *Dirección:* Calle La Merced 456, Arequipa\n';
+    message += '📞 *Teléfono:* 054-123456\n\n';
+    message += '⏰ *Horario:* Lunes a Sábado 10:00 AM - 6:00 PM\n\n';
+    message += '¡Gracias por tu pedido! 🍲';
+    
+    const whatsappURL = `https://wa.me/51987654321?text=${encodeURIComponent(message)}`;
+    window.open(whatsappURL, '_blank');
 }
 
 function showNotification(message) {
-  // Usar notificación fija para evitar crear/remover divs
-  let notification = document.querySelector(".notification");
-  if (!notification) {
-    notification = document.createElement("div");
-    notification.className = "notification";
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = message;
+    
     document.body.appendChild(notification);
-  }
-  notification.textContent = message;
-  notification.style.display = "block";
-  notification.style.opacity = "1";
-
-  // Ocultar después de 3s
-  setTimeout(() => {
-    notification.style.opacity = "0";
+    
     setTimeout(() => {
-      notification.style.display = "none";
-    }, 300); // Esperar transición
-  }, 2700);
+        notification.remove();
+    }, 3000);
 }
 
 function loadNosotros() {
-  const nosotrosTab = document.getElementById("nosotros");
-  if (!nosotrosTab) return;
-
-  const nosotrosTitulo =
-    window.nosotrosData?.titulo || window.sharedData?.nombre || "";
-  const nosotrosSubtitulo =
-    window.nosotrosData?.subtitulo || window.empresaData?.slogan || "";
-  const nosotrosHistoria =
-    window.nosotrosData?.historia ||
-    "Somos una picantería familiar con más de 70 años de tradición. Desde nuestros inicios en 1950, nos hemos dedicado a preservar y compartir la rica tradición culinaria arequipeña.";
-  nosotrosTab.innerHTML = `
+    const nosotrosTab = document.getElementById('nosotros');
+    if (!nosotrosTab) return;
+    
+    nosotrosTab.innerHTML = `
         <div class="nosotros-container">
             <div class="about-header">
-                <h2>${nosotrosTitulo}</h2>
-                <p>${nosotrosSubtitulo}</p>
+                <h2>Picantería Los Tunales</h2>
+                <p>Tradición arequipeña desde 1950</p>
             </div>
             <div class="about-content">
                 <div class="about-story">
                     <h3>Nuestra Historia</h3>
-                    <p>${nosotrosHistoria}</p>
+                    <p>Somos una picantería familiar con más de 70 años de tradición. Desde nuestros inicios en 1950, nos hemos dedicado a preservar y compartir la rica tradición culinaria arequipeña.</p>
                     <div class="values-grid">
                         <div class="value-item">
                             <i class="fas fa-heart"></i>
@@ -1156,12 +1154,12 @@ function loadNosotros() {
             </div>
         </div>
     `;
-
-  // Estilos de Nosotros
-  if (!document.getElementById("nosotros-styles")) {
-    const style = document.createElement("style");
-    style.id = "nosotros-styles";
-    style.textContent = `
+    
+    // Estilos de Nosotros
+    if (!document.getElementById('nosotros-styles')) {
+        const style = document.createElement('style');
+        style.id = 'nosotros-styles';
+        style.textContent = `
             .nosotros-container {
                 padding: 40px;
                 min-height: 500px;
@@ -1289,15 +1287,15 @@ function loadNosotros() {
                 }
             }
         `;
-    document.head.appendChild(style);
-  }
+        document.head.appendChild(style);
+    }
 }
 
 function loadUbicacion() {
-  const ubicacionTab = document.getElementById("ubicacion");
-  if (!ubicacionTab) return;
-
-  ubicacionTab.innerHTML = `
+    const ubicacionTab = document.getElementById('ubicacion');
+    if (!ubicacionTab) return;
+    
+    ubicacionTab.innerHTML = `
         <div class="ubicacion-container">
             <div class="location-header">
                 <h2>Ubicación</h2>
@@ -1307,7 +1305,7 @@ function loadUbicacion() {
                 <div class="map-section">
                     <div class="map-container">
                         <iframe 
-                            src="https://www.google.com/maps?q=-16.4090,-71.5375&z=15&output=embed" 
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3826.123456789!2d-71.539123!3d-16.398876!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9102424b4b4b4b4b%3A0x4b4b4b4b4b4b4b!2sArequipa%2C+Per%C3%BA!5e0!3m2!1ses!2spe!4v1234567890" 
                             allowfullscreen="" 
                             loading="lazy" 
                             referrerpolicy="no-referrer-when-downgrade">
@@ -1321,9 +1319,7 @@ function loadUbicacion() {
                         </div>
                         <div class="info-content">
                             <h3>Dirección</h3>
-                            <p>${window.empresaData?.direccion || "Calle Tunales 123, Arequipa"}<br>
-                            ${window.empresaData?.telefono || "+51 54 123456"}<br>
-                            ${window.empresaData?.email || "info@picanterialostunales.com"}</p>
+                            <p>Calle La Merced 456<br>Centro Histórico<br>Arequipa, Perú</p>
                         </div>
                     </div>
                     <div class="info-card">
@@ -1332,8 +1328,7 @@ function loadUbicacion() {
                         </div>
                         <div class="info-content">
                             <h3>Horario</h3>
-                            <p>Lunes a Viernes: ${window.empresaData?.horarios?.lunes_viernes || "11:00-22:00"}<br>
-                            Sábado y Domingo: ${window.empresaData?.horarios?.sabado_domingo || "10:00-23:00"}</p>
+                            <p>Lunes a Sábado: 10:00 AM - 6:00 PM<br>Domingos: 10:00 AM - 4:00 PM</p>
                         </div>
                     </div>
                     <div class="info-card">
@@ -1342,8 +1337,7 @@ function loadUbicacion() {
                         </div>
                         <div class="info-content">
                             <h3>Contacto</h3>
-                            <p>Teléfono: ${window.empresaData?.telefono || "+51 54 123456"}<br>
-                            WhatsApp: ${window.sharedData?.whatsapp || window.socialData?.whatsapp || ""}</p>
+                            <p>Teléfono: 054-123456<br>Celular: 987-654321</p>
                         </div>
                     </div>
                     <div class="info-card">
@@ -1352,20 +1346,19 @@ function loadUbicacion() {
                         </div>
                         <div class="info-content">
                             <h3>Email</h3>
-                            <p>${window.empresaData?.email || "info@picanterialostunales.com"}<br>
-                            reservas@picanterialostunales.com</p>
+                            <p>info@picanterialostunales.com<br>reservas@picanterialostunales.com</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     `;
-
-  // Estilos de Ubicación
-  if (!document.getElementById("ubicacion-styles")) {
-    const style = document.createElement("style");
-    style.id = "ubicacion-styles";
-    style.textContent = `
+    
+    // Estilos de Ubicación
+    if (!document.getElementById('ubicacion-styles')) {
+        const style = document.createElement('style');
+        style.id = 'ubicacion-styles';
+        style.textContent = `
             .ubicacion-container {
                 padding: 40px;
                 min-height: 500px;
@@ -1477,128 +1470,97 @@ function loadUbicacion() {
                 }
             }
         `;
-    document.head.appendChild(style);
-  }
+        document.head.appendChild(style);
+    }
 }
+
 
 // CART CONTROL FUNCTIONS
-function updateCartModalContent() {
-  const cartModal = document.querySelector(".cart-modal");
-  if (!cartModal) return;
-
-  // Agrupar productos actualizados
-  const groupedCart = {};
-  cart.forEach((item) => {
-    if (!groupedCart[item.id]) {
-      groupedCart[item.id] = { ...item, quantity: 0 };
-    }
-    groupedCart[item.id].quantity++;
-  });
-
-  // Actualizar cantidades y subtotales
-  Object.values(groupedCart).forEach((item) => {
-    const qtyEl = document.getElementById(`cart-qty-${item.id}`);
-    const subtotalEl = cartModal.querySelector(`[data-product-id="${item.id}"] .item-subtotal`);
-    if (qtyEl) qtyEl.textContent = item.quantity;
-    if (subtotalEl) subtotalEl.textContent = `S/ ${(item.precio * item.quantity).toFixed(2)}`;
-  });
-
-  // Actualizar total
-  let total = 0;
-  Object.values(groupedCart).forEach((item) => {
-    total += item.precio * item.quantity;
-  });
-  const totalEl = cartModal.querySelector(".cart-summary strong");
-  if (totalEl) totalEl.textContent = `Total: S/ ${total.toFixed(2)}`;
-
-  // Remover items con cantidad 0
-  const itemsToRemove = cartModal.querySelectorAll(".cart-item");
-  itemsToRemove.forEach((itemEl) => {
-    const productId = parseInt(itemEl.getAttribute("data-product-id"));
-    if (!groupedCart[productId]) {
-      itemEl.remove();
-    }
-  });
-}
-
 function updateCartQuantity(productId, change) {
-  // Find all items with this product ID in cart
-  const productItems = cart.filter((item) => item.id === productId);
-
-  if (change > 0) {
-    // Add one more item
-    const product = window.productos.find((p) => p.id === productId);
-    if (product) {
-      cart.push({
-        id: product.id,
-        nombre: product.nombre,
-        precio: product.precio,
-        emoji: product.emoji,
-      });
-      cartCount++;
+    // Find all items with this product ID in cart
+    const productItems = cart.filter(item => item.id === productId);
+    
+    if (change > 0) {
+        // Add one more item
+        const product = window.productos.find(p => p.id === productId);
+        if (product) {
+            cart.push({
+                id: product.id,
+                nombre: product.nombre,
+                precio: product.precio,
+                emoji: product.emoji
+            });
+            cartCount++;
+        }
+    } else if (change < 0 && productItems.length > 0) {
+        // Remove one item
+        const indexToRemove = cart.findIndex(item => item.id === productId);
+        if (indexToRemove !== -1) {
+            cart.splice(indexToRemove, 1);
+            cartCount--;
+        }
     }
-  } else if (change < 0 && productItems.length > 0) {
-    // Remove one item
-    const indexToRemove = cart.findIndex((item) => item.id === productId);
-    if (indexToRemove !== -1) {
-      cart.splice(indexToRemove, 1);
-      cartCount--;
+    
+    updateCartCount();
+    
+    // Refresh cart modal if open
+    const cartModal = document.querySelector('.cart-modal');
+    if (cartModal) {
+        closeCartModal();
+        setTimeout(() => showCartDetails(), 100);
     }
-  }
-
-  updateCartCount();
-
-  // Update cart modal if open (sin cerrar/reabrir)
-  updateCartModalContent();
-
-  if (change > 0) {
-    const product = window.productos.find((p) => p.id === productId);
-    showNotification("+" + product.nombre + " agregado");
-  } else {
-    const product = window.productos.find((p) => p.id === productId);
-    showNotification("- " + product.nombre + " eliminado");
-  }
+    
+    if (change > 0) {
+        const product = window.productos.find(p => p.id === productId);
+        showNotification('+' + product.nombre + ' agregado');
+    } else {
+        const product = window.productos.find(p => p.id === productId);
+        showNotification('- ' + product.nombre + ' eliminado');
+    }
 }
 
 function removeFromCart(productId) {
-  // Remove all items with this product ID
-  const initialCount = cart.length;
-  cart = cart.filter((item) => item.id !== productId);
-  const removedCount = initialCount - cart.length;
-  cartCount = cart.length;
-
-  updateCartCount();
-
-  // Update cart modal if open (sin cerrar/reabrir)
-  updateCartModalContent();
-
-  const product = window.productos.find((p) => p.id === productId);
-  showNotification(removedCount + " x " + product.nombre + " eliminado(s)");
+    // Remove all items with this product ID
+    const initialCount = cart.length;
+    cart = cart.filter(item => item.id !== productId);
+    const removedCount = initialCount - cart.length;
+    cartCount = cart.length;
+    
+    updateCartCount();
+    
+    // Refresh cart modal if open
+    const cartModal = document.querySelector('.cart-modal');
+    if (cartModal) {
+        closeCartModal();
+        setTimeout(() => showCartDetails(), 100);
+    }
+    
+    const product = window.productos.find(p => p.id === productId);
+    showNotification(removedCount + ' x ' + product.nombre + ' eliminado(s)');
 }
+
+
 
 // COLUMN CHANGE FUNCTION
-function changeColumns(columns, silent = false) {
-  const grid = document.getElementById("products-grid");
-  const buttons = document.querySelectorAll(".view-btn");
-
-  if (!grid) return;
-
-  // Remove all column classes
-  grid.classList.remove("cols-1", "cols-2", "cols-3");
-
-  // Add the new column class
-  grid.classList.add("cols-" + columns);
-
-  // Update button states
-  buttons.forEach((btn) => {
-    btn.classList.remove("active");
-    if (parseInt(btn.getAttribute("data-columns")) === columns) {
-      btn.classList.add("active");
-    }
-  });
-
-  // Show notification
-  if (!silent) {
-    showNotification("Vista: " + columns + " columna" + (columns > 1 ? "s" : ""));
-  }
+function changeColumns(columns) {
+    const grid = document.getElementById('products-grid');
+    const buttons = document.querySelectorAll('.view-btn');
+    
+    // Remove all column classes
+    grid.classList.remove('cols-1', 'cols-2', 'cols-3');
+    
+    // Add the new column class
+    grid.classList.add('cols-' + columns);
+    
+    // Update button states
+    buttons.forEach(btn => {
+        btn.classList.remove('active');
+        if (parseInt(btn.getAttribute('data-columns')) === columns) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Show notification
+    showNotification('Vista: ' + columns + ' columna' + (columns > 1 ? 's' : ''));
 }
+
