@@ -1,0 +1,22 @@
+{
+  "tienda": {
+    "nombre": "Mi Tienda Online",
+    "descripcion": "¡Bienvenido a nuestra tienda online!"
+  },
+  "contacto": {
+    "whatsapp": "5491234567",
+    "instagram": "@mitienda",
+    "facebook": "mitienda"
+  },
+  "diseno": {
+    "colorPrimario": "#667eea",
+    "colorSecundario": "#764ba2",
+    "colorAcento": "#ff6b6b",
+    "fondo": "data/logos/fondo.jpg",
+    "logo": "data/logos/logo.png"
+  },
+  "layout": {
+    "tipo": "grid",
+    "columnas": 3
+  }
+}

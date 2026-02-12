@@ -1,0 +1,36 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "name": "Producto Ejemplo 1",
+      "price": 29.99,
+      "description": "Descripción del producto 1. Este es un producto de ejemplo.",
+      "image": "data/imagenes_product/default1.jpg",
+      "category": "General"
+    },
+    {
+      "id": 2,
+      "name": "Producto Ejemplo 2",
+      "price": 49.99,
+      "description": "Descripción del producto 2. Este es otro producto de ejemplo.",
+      "image": "data/imagenes_product/default2.jpg",
+      "category": "General"
+    },
+    {
+      "id": 3,
+      "name": "Producto Ejemplo 3",
+      "price": 39.99,
+      "description": "Descripción del producto 3. Un tercer producto de ejemplo.",
+      "image": "data/imagenes_product/default3.jpg",
+      "category": "General"
+    },
+    {
+      "id": 4,
+      "name": "fghfgh",
+      "price": 4545.0,
+      "description": "ghgfh",
+      "image": "data/imagenes_product/red-and-green-4k-pc-houses-8d7ckpaq0ee576ko.jpg",
+      "category": "General"
+    }
+  ]
+}
