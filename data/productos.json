@@ -1,0 +1,122 @@
+[
+  {
+    "id": 1,
+    "nombre": "Chairo de Tunales",
+    "precio": 18.9,
+    "descripcion": "Sopa tradicional con chuño y carne de llama",
+    "emoji": "🍲",
+    "imagen": "data/imagenes_product/1.jpg"
+  },
+  {
+    "id": 2,
+    "nombre": "Soltero de Queso",
+    "precio": 22.5,
+    "descripcion": "Habas tiernas con queso fresco y choclo",
+    "emoji": "🧀",
+    "imagen": "data/imagenes_product/2.jpg"
+  },
+  {
+    "id": 3,
+    "nombre": "Ocopa Arequipeña",
+    "precio": 24.0,
+    "descripcion": "Salsa de huacatay con papas y queso",
+    "emoji": "🥔",
+    "imagen": "data/imagenes_product/3.jpg"
+  },
+  {
+    "id": 4,
+    "nombre": "Rocoto Relleno",
+    "precio": 26.8,
+    "descripcion": "Rocoto relleno con carne y queso",
+    "emoji": "🌶️",
+    "imagen": "data/imagenes_product/4.jpg"
+  },
+  {
+    "id": 5,
+    "nombre": "Pastel de Papa",
+    "precio": 20.5,
+    "descripcion": "Pastel de papa con carne molida",
+    "emoji": "🥙",
+    "imagen": "data/imagenes_product/5.jpg"
+  },
+  {
+    "id": 6,
+    "nombre": "Adobo Arequipeño",
+    "precio": 32.0,
+    "descripcion": "Cerdo marinado con chicha de jora",
+    "emoji": "🍖",
+    "imagen": "data/imagenes_product/6.jpg"
+  },
+  {
+    "id": 7,
+    "nombre": "Chicharrón de Chancho",
+    "precio": 28.9,
+    "descripcion": "Cerdo frito con camote y sarza",
+    "emoji": "🥓",
+    "imagen": "data/imagenes_product/7.jpg"
+  },
+  {
+    "id": 8,
+    "nombre": "Cuy Chactado",
+    "precio": 45.0,
+    "descripcion": "Cuy frito tradicional arequipeño",
+    "emoji": "🐭",
+    "imagen": "data/imagenes_product/8.jpg"
+  },
+  {
+    "id": 9,
+    "nombre": "Zambo Racacho",
+    "precio": 35.0,
+    "descripcion": "Plato típico con zambo y mote",
+    "emoji": "🎃",
+    "imagen": "data/imagenes_product/9.jpg"
+  },
+  {
+    "id": 10,
+    "nombre": "Timpo de Tunales",
+    "precio": 38.5,
+    "descripcion": "Sopa de miércoles santo con carne",
+    "emoji": "🍜",
+    "imagen": "data/imagenes_product/10.jpg"
+  },
+  {
+    "id": 11,
+    "nombre": "Pepián de Cordero",
+    "precio": 42.0,
+    "descripcion": "Cordero en salsa de ají y hierbas",
+    "emoji": "🐑",
+    "imagen": "data/imagenes_product/11.jpg"
+  },
+  {
+    "id": 12,
+    "nombre": "Causa Arequipeña",
+    "precio": 19.9,
+    "descripcion": "Causa rellena con pollo o atún",
+    "emoji": "🥚",
+    "imagen": "data/imagenes_product/12.jpg"
+  },
+  {
+    "id": 13,
+    "nombre": "Enrollado de Pollo",
+    "precio": 23.5,
+    "descripcion": "Pollo enrollado con aceitunas",
+    "emoji": "🍗",
+    "imagen": "data/imagenes_product/13.jpg"
+  },
+  {
+    "id": 14,
+    "nombre": "Chupe de Viernes",
+    "precio": 30.0,
+    "descripcion": "Chupe tradicional de los viernes",
+    "emoji": "🍲",
+    "imagen": "data/imagenes_product/14.jpg"
+  },
+  {
+    "id": 15,
+    "nombre": "Queso Helado",
+    "precio": 12.9,
+    "descripcion": "Helado tradicional de queso",
+    "emoji": "🍦",
+    "imagen": "data/imagenes_product/15.jpg"
+  }
+]
