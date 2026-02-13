@@ -1,18 +1,39 @@
 // PRODUCTS.JS - Gestión de productos y tienda
 
-function changeColumns(cols, init = false) {
-  const productsGrid = document.getElementById("products-grid");
-  if (!productsGrid) return;
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
 
-  productsGrid.className = `products-grid cols-${cols}`;
+let currentColumns = null;
+let resizeObserverEnabled = true;
+
+function changeColumns(cols, init = false) {
+  if (currentColumns === cols && !init) return;
+
+  const grid = document.querySelector(".products-grid");
+  if (!grid) return;
 
   if (!init) {
+    resizeObserverEnabled = false; // Desactivar ResizeObserver para clicks manuales
     // Actualizar botones activos
     document.querySelectorAll(".view-btn").forEach((btn) => {
       btn.classList.remove("active");
     });
     document.querySelector(`.view-btn[data-columns="${cols}"]`).classList.add("active");
   }
+
+  grid.classList.remove("cols-1", "cols-2", "cols-3");
+  grid.classList.add(`cols-${cols}`);
+
+  currentColumns = cols;
 }
 
 /**
@@ -29,11 +50,11 @@ async function loadProducts() {
   if (!window.productos) {
     let productos;
     try {
-      const response = await fetch("data/productos.json", { cache: "no-store" });
-      console.log("Response:", response);
+      const response = await fetch("data/productos.json", {
+        cache: "no-store",
+      });
       productos = await response.json();
       console.log("Productos cargados:", productos.length);
-      console.log("Primer producto:", productos[0]);
     } catch (error) {
       console.error("Error cargando productos:", error);
       return;
@@ -43,21 +64,51 @@ async function loadProducts() {
     console.log("Productos ya cargados desde cache");
   }
 
-  // Evitar re-render si ya está renderizado
-  if (tiendaTab.querySelector('.tienda-container')) {
-    console.log("Productos ya renderizados, saltando re-render");
-    return;
-  }
-
   const productos = window.productos;
 
-  let productosHTML = `
+  // Agregar event listeners antes del early return
+  if (!tiendaTab.dataset.listenersAttached) {
+    tiendaTab.addEventListener("click", (e) => {
+      const target = e.target;
+      const button = target.closest('.view-btn, .btn-minus, .btn-plus, .btn-add-cart');
+
+      if (button) {
+        if (button.classList.contains('view-btn')) {
+          const cols = button.getAttribute('data-columns');
+          changeColumns(parseInt(cols));
+        } else if (button.classList.contains('btn-minus')) {
+          const productCard = button.closest('.product-card');
+          const qtyEl = productCard.querySelector('.quantity');
+          const productId = parseInt(qtyEl.id.split('-')[1]);
+          changeQuantity(productId, -1);
+        } else if (button.classList.contains('btn-plus')) {
+          const productCard = button.closest('.product-card');
+          const qtyEl = productCard.querySelector('.quantity');
+          const productId = parseInt(qtyEl.id.split('-')[1]);
+          changeQuantity(productId, 1);
+        } else if (button.classList.contains('btn-add-cart')) {
+          const productCard = button.closest('.product-card');
+          const qtyEl = productCard.querySelector('.quantity');
+          const productId = parseInt(qtyEl.id.split('-')[1]);
+          addToCart(productId);
+        }
+      }
+    });
+
+    tiendaTab.dataset.listenersAttached = 'true';
+  }
+
+  // Renderizar solo si no está renderizado
+  if (!tiendaTab.querySelector(".tienda-container")) {
+    console.log("Renderizando productos...");
+
+    let productosHTML = `
         <div class="tienda-container">
             <div class="shop-header">
                 <h2>Nuestra Picantería</h2>
                 <p>15 platos tradicionales arequipeños</p>
                 <div class="view-controls">
-                    <button class="view-btn" data-columns="1">
+                    <button class="view-btn active" data-columns="1">
                         <i class="fas fa-list"></i> 1 Columna
                     </button>
                     <button class="view-btn" data-columns="2">
@@ -71,8 +122,8 @@ async function loadProducts() {
             <div class="products-grid" id="products-grid">
     `;
 
-  productos.forEach((producto) => {
-    productosHTML += `
+    productos.forEach((producto) => {
+      productosHTML += `
             <div class="product-card" role="article" aria-label="${producto.nombre}">
                 <div class="product-image ${producto.imagen ? "has-image" : ""}">
                     ${
@@ -98,87 +149,73 @@ async function loadProducts() {
                 </div>
             </div>
         `;
-  });
+    });
 
-  productosHTML += `
+    productosHTML += `
             </div>
         </div>
     `;
 
-  tiendaTab.innerHTML = productosHTML;
+    tiendaTab.innerHTML = productosHTML;
 
-  const defaultCols = window.innerWidth >= 992 ? 3 : 1;
-  changeColumns(defaultCols, true);
-
-  // Set active button
-  const viewButtons = tiendaTab.querySelectorAll('.view-btn');
-  viewButtons.forEach(btn => btn.classList.remove('active'));
-  const activeBtn = tiendaTab.querySelector(`.view-btn[data-columns="${defaultCols}"]`);
-  if (activeBtn) activeBtn.classList.add('active');
-
-  // Event delegation for tienda
-  if (!tiendaTab.dataset.listenersAttached) {
-    tiendaTab.addEventListener('click', function(e) {
-      const target = e.target;
-      if (target.classList.contains('view-btn')) {
-        const cols = target.getAttribute('data-columns');
-        changeColumns(parseInt(cols));
-      } else if (target.classList.contains('btn-minus')) {
-        const productCard = target.closest('.product-card');
-        const qtyEl = productCard.querySelector('.quantity');
-        const productId = parseInt(qtyEl.id.split('-')[1]);
-        changeQuantity(productId, -1);
-      } else if (target.classList.contains('btn-plus')) {
-        const productCard = target.closest('.product-card');
-        const qtyEl = productCard.querySelector('.quantity');
-        const productId = parseInt(qtyEl.id.split('-')[1]);
-        changeQuantity(productId, 1);
-      } else if (target.classList.contains('btn-add-cart')) {
-        const productCard = target.closest('.product-card');
-        const qtyEl = productCard.querySelector('.quantity');
-        const productId = parseInt(qtyEl.id.split('-')[1]);
-        addToCart(productId);
-      }
-    });
-    tiendaTab.dataset.listenersAttached = 'true';
+    const defaultCols = window.innerWidth >= 992 ? 3 : 1;
+    changeColumns(defaultCols, true);
+  } else {
+    console.log("Productos ya renderizados, saltando re-render");
   }
 
   // Lazy loading con Intersection Observer
-  const imageObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
+  if (window.productImageObserver) {
+    window.productImageObserver.disconnect();
+  }
+
+  window.productImageObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
       if (entry.isIntersecting) {
         const img = entry.target;
         img.src = img.dataset.src;
-        img.classList.remove('lazy');
-        imageObserver.unobserve(img);
+        img.classList.remove("lazy");
+        window.productImageObserver.unobserve(img);
       }
     });
-  }, { rootMargin: '50px' });
+  }, { rootMargin: "50px" });
 
-  document.querySelectorAll('.lazy').forEach(img => imageObserver.observe(img));
+  document.querySelectorAll(".lazy").forEach((img) => window.productImageObserver.observe(img));
 
-  // Responsive con ResizeObserver
-  const resizeObserver = new ResizeObserver(entries => {
-    const width = entries[0].contentRect.width;
-    const cols = width >= 992 ? 3 : width >= 600 ? 2 : 1;
-    changeColumns(cols);
+  // Responsive con ResizeObserver debounced
+  if (window.productResizeObserver) {
+    window.productResizeObserver.disconnect();
+  }
+
+  let resizeTimeout;
+  window.productResizeObserver = new ResizeObserver(entries => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      if (!resizeObserverEnabled) {
+        resizeObserverEnabled = true; // Reset flag
+        return;
+      }
+      const width = entries[0].contentRect.width;
+      const cols = width >= 992 ? 3 : width >= 600 ? 2 : 1;
+      changeColumns(cols);
+    }, 150);
   });
 
-  resizeObserver.observe(document.documentElement);
+  window.productResizeObserver.observe(tiendaTab);
 
   // Guardar productos para el carrito
   window.productos = productos;
 
   // Preload de primeras 5 imágenes para velocidad (no crítico)
-  if ('requestIdleCallback' in window) {
+  if ("requestIdleCallback" in window) {
     requestIdleCallback(() => {
-      productos.slice(0, 5).forEach(p => {
+      productos.slice(0, 5).forEach((p) => {
         if (p.imagen) new Image().src = p.imagen;
       });
     });
   } else {
     setTimeout(() => {
-      productos.slice(0, 5).forEach(p => {
+      productos.slice(0, 5).forEach((p) => {
         if (p.imagen) new Image().src = p.imagen;
       });
     }, 100);
@@ -191,3 +228,9 @@ function changeQuantity(productId, change) {
   let newQty = Math.max(1, currentQty + change);
   qtyElement.textContent = newQty;
 }
+
+// Cleanup observers on page unload
+window.addEventListener('beforeunload', () => {
+  window.productResizeObserver?.disconnect();
+  window.productImageObserver?.disconnect();
+});

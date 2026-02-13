@@ -267,13 +267,15 @@ function showModal(content) {
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
   modal.innerHTML = `
-        <div class="modal-backdrop" onclick="closeModal()"></div>
+        <div class="modal-backdrop"></div>
         <div class="modal-content">
             ${content}
         </div>
     `;
 
   document.body.appendChild(modal);
+
+  modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
 }
 
 function closeModal() {

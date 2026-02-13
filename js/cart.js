@@ -3,16 +3,32 @@
   let cart = [];
   let cartCount = 0;
 
-  // Cargar carrito desde localStorage con manejo de errores
+  // Configuración de expiración
+  const EXPIRATION_CONFIG = {
+    type: 'INACTIVITY',
+    inactivityHours: 2
+  };
+
+  // Cargar carrito desde localStorage con manejo de errores y expiración
   try {
-    const stored = localStorage.getItem('cart');
-    if (stored) {
-      cart = JSON.parse(stored);
-      cartCount = cart.length;
+    const storedData = localStorage.getItem('cartData');
+    if (storedData) {
+      const data = JSON.parse(storedData);
+      const now = Date.now();
+      const expirationTime = EXPIRATION_CONFIG.inactivityHours * 60 * 60 * 1000; // horas a ms
+
+      if (now - data.lastActivity < expirationTime) {
+        cart = data.cart;
+        cartCount = data.cartCount;
+        console.log('✅ Carrito cargado desde localStorage (válido)');
+      } else {
+        console.log('⏰ Carrito expirado por inactividad, limpiando');
+        localStorage.removeItem('cartData');
+      }
     }
   } catch (e) {
     console.error('Error cargando carrito desde localStorage, reseteando:', e);
-    localStorage.removeItem('cart');
+    localStorage.removeItem('cartData');
   }
 
   // Función para guardar carrito con debounce
@@ -21,9 +37,18 @@
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       try {
-        localStorage.setItem('cart', JSON.stringify(cart));
+        const data = {
+          cart: cart,
+          cartCount: cartCount,
+          lastActivity: Date.now()
+        };
+        localStorage.setItem('cartData', JSON.stringify(data));
+        console.log('✅ Carrito guardado en localStorage');
       } catch (e) {
-        console.error('Error guardando carrito en localStorage:', e);
+        console.error('❌ Error guardando carrito en localStorage:', e);
+        if (typeof showNotification === 'function') {
+          showNotification('Error al guardar carrito');
+        }
       }
     }, 300);
   };
@@ -44,11 +69,51 @@
   }
 
   function addToCart(productId) {
-    const producto = window.productos.find((p) => p.id === productId);
-    const quantity = parseInt(
-      document.getElementById(`qty-${productId}`).textContent,
-    );
+    console.log('🛒 addToCart llamado con productId:', productId);
+    
+    // ✅ VALIDACIÓN 1: Verificar que window.productos existe
+    if (!window.productos) {
+      console.error('❌ window.productos no está definido');
+      if (typeof showNotification === 'function') {
+        showNotification('Error: Productos no cargados');
+      }
+      return;
+    }
 
+    // ✅ VALIDACIÓN 2: Buscar el producto
+    const producto = window.productos.find((p) => p.id === productId);
+    
+    if (!producto) {
+      console.error('❌ Producto no encontrado con ID:', productId);
+      if (typeof showNotification === 'function') {
+        showNotification('Error: Producto no encontrado');
+      }
+      return;
+    }
+
+    console.log('✅ Producto encontrado:', producto);
+
+    // ✅ VALIDACIÓN 3: Verificar que el elemento de cantidad existe
+    const qtyElement = document.getElementById(`qty-${productId}`);
+    
+    if (!qtyElement) {
+      console.error('❌ Elemento de cantidad no encontrado para ID:', productId);
+      if (typeof showNotification === 'function') {
+        showNotification('Error al agregar producto');
+      }
+      return;
+    }
+
+    const quantity = parseInt(qtyElement.textContent, 10);
+    
+    if (isNaN(quantity) || quantity < 1) {
+      console.error('❌ Cantidad inválida:', quantity);
+      return;
+    }
+
+    console.log('✅ Agregando', quantity, 'unidades al carrito');
+
+    // Agregar al carrito
     for (let i = 0; i < quantity; i++) {
       cart.push({
         id: producto.id,
@@ -59,15 +124,22 @@
     }
 
     cartCount += quantity;
+    console.log('✅ Carrito actualizado. Total items:', cartCount);
+    
     updateCartCount();
 
     // Guardar en localStorage
     saveCart();
 
     // Resetear cantidad
-    document.getElementById(`qty-${productId}`).textContent = "1";
+    qtyElement.textContent = "1";
 
-    showNotification(`${quantity} x ${producto.nombre} agregado(s) al carrito`);
+    // Notificar al usuario
+    if (typeof showNotification === 'function') {
+      showNotification(`✅ ${quantity} x ${producto.nombre} agregado al carrito`);
+    } else {
+      console.log(`✅ ${quantity} x ${producto.nombre} agregado al carrito`);
+    }
   }
 
   function updateCartCount() {
@@ -75,12 +147,17 @@
     if (cartCountElement) {
       cartCountElement.textContent = cartCount;
       cartCountElement.style.display = cartCount > 0 ? "flex" : "none";
+      console.log('✅ Contador actualizado:', cartCount);
+    } else {
+      console.warn('⚠️ Elemento .cart-count no encontrado');
     }
   }
 
   function showCartDetails() {
     if (cart.length === 0) {
-      showNotification("El carrito está vacío");
+      if (typeof showNotification === 'function') {
+        showNotification("El carrito está vacío");
+      }
       return;
     }
 
@@ -103,7 +180,7 @@
             <div class="cart-item" data-product-id="${item.id}" role="listitem" aria-label="Producto en carrito: ${item.nombre}">
                 <div class="item-info">
                     ${(() => {
-                      const producto = window.productos.find(p => p.id === item.id);
+                      const producto = window.productos?.find(p => p.id === item.id);
                       return producto && producto.imagen
                         ? `<img class="cart-thumb" src="${producto.imagen}" alt="Miniatura de ${item.nombre}">`
                         : `<span class="item-emoji">${item.emoji}</span>`;
@@ -132,10 +209,12 @@
             </div>
             <div class="cart-footer">
                 <div class="cart-total">Total: S/ ${total.toFixed(2)}</div>
-                <button class="btn-clear-cart">Vaciar carrito</button>
-                <button class="btn-send-to-whatsapp">
-                    <img class="wa-icon" src="data/ico/Whatsapp.svg" alt="WhatsApp"> Enviar a WhatsApp
-                </button>
+                <div class="cart-actions">
+                    <button class="btn-clear">Vaciar carrito</button>
+                    <button class="btn-whatsapp">
+                        <img class="wa-icon" src="data/ico/Whatsapp.svg" alt="WhatsApp"> Enviar a WhatsApp
+                    </button>
+                </div>
             </div>
         </div>
     `;
@@ -144,30 +223,36 @@
 
     // Event delegation for cart modal
     const modal = document.querySelector('.modal-overlay');
-    modal.addEventListener('click', function(e) {
-      const target = e.target;
-      if (target.classList.contains('btn-close')) {
-        closeCartModal();
-      } else if (target.classList.contains('modal-backdrop')) {
-        closeModal();
-      } else if (target.classList.contains('cart-btn-minus')) {
-        const item = target.closest('.cart-item');
-        const productId = parseInt(item.getAttribute('data-product-id'));
-        updateCartQuantity(productId, -1);
-      } else if (target.classList.contains('cart-btn-plus')) {
-        const item = target.closest('.cart-item');
-        const productId = parseInt(item.getAttribute('data-product-id'));
-        updateCartQuantity(productId, 1);
-      } else if (target.classList.contains('btn-delete-item')) {
-        const item = target.closest('.cart-item');
-        const productId = parseInt(item.getAttribute('data-product-id'));
-        removeFromCart(productId);
-      } else if (target.classList.contains('btn-send-to-whatsapp')) {
-        sendToWhatsApp();
-      } else if (target.classList.contains('btn-clear-cart')) {
-        clearCart();
-      }
-    });
+    if (modal) {
+      modal.addEventListener('click', function(e) {
+        const target = e.target;
+        const button = target.closest('.btn-close, .modal-backdrop, .cart-btn-minus, .cart-btn-plus, .btn-delete-item, .btn-whatsapp, .btn-clear');
+        
+        if (!button) return;
+        
+        if (button.classList.contains('btn-close')) {
+          closeCartModal();
+        } else if (button.classList.contains('modal-backdrop')) {
+          closeModal();
+        } else if (button.classList.contains('cart-btn-minus')) {
+          const item = button.closest('.cart-item');
+          const productId = parseInt(item.getAttribute('data-product-id'), 10);
+          updateCartQuantity(productId, -1);
+        } else if (button.classList.contains('cart-btn-plus')) {
+          const item = button.closest('.cart-item');
+          const productId = parseInt(item.getAttribute('data-product-id'), 10);
+          updateCartQuantity(productId, 1);
+        } else if (button.classList.contains('btn-delete-item')) {
+          const item = button.closest('.cart-item');
+          const productId = parseInt(item.getAttribute('data-product-id'), 10);
+          removeFromCart(productId);
+        } else if (button.classList.contains('btn-whatsapp')) {
+          sendToWhatsApp();
+        } else if (button.classList.contains('btn-clear')) {
+          clearCart();
+        }
+      });
+    }
   }
 
   function sendToWhatsApp() {
@@ -194,9 +279,22 @@
 
     const whatsappNumber =
       window.sharedData?.whatsapp || window.socialData?.whatsapp || "";
-    if (!whatsappNumber) return;
+    
+    if (!whatsappNumber) {
+      if (typeof showNotification === 'function') {
+        showNotification('Error: Número de WhatsApp no configurado');
+      }
+      return;
+    }
+    
     const whatsappURL = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappURL, "_blank");
+    
+    // Abrir con seguridad
+    const link = document.createElement('a');
+    link.href = whatsappURL;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.click();
   }
 
   function clearCart() {
@@ -208,19 +306,22 @@
     // Guardar en localStorage
     saveCart();
 
-    showNotification("Carrito vaciado");
+    if (typeof showNotification === 'function') {
+      showNotification("Carrito vaciado");
+    }
   }
 
   function updateCartQuantity(productId, change) {
     const qtyElement = document.getElementById(`cart-qty-${productId}`);
-    let currentQty = parseInt(qtyElement.textContent);
+    if (!qtyElement) return;
+    
+    let currentQty = parseInt(qtyElement.textContent, 10);
     let newQty = Math.max(1, currentQty + change);
     qtyElement.textContent = newQty;
 
     // Actualizar carrito
-    const productIndex = cart.findIndex((item) => item.id === productId);
     if (change > 0) {
-      const producto = window.productos.find((p) => p.id === productId);
+      const producto = window.productos?.find((p) => p.id === productId);
       if (producto) {
         cart.push({
           id: producto.id,
@@ -231,7 +332,6 @@
         cartCount++;
       }
     } else if (change < 0 && cart.length > 0) {
-      // Remove one item
       const indexToRemove = cart.findIndex((item) => item.id === productId);
       if (indexToRemove !== -1) {
         cart.splice(indexToRemove, 1);
@@ -240,46 +340,32 @@
     }
 
     updateCartCount();
-
-    // Update cart modal if open (sin cerrar/reabrir)
     updateCartModalContent();
-
-    // Guardar en localStorage
     saveCart();
-
-    if (change > 0) {
-      const product = window.productos.find((p) => p.id === productId);
-      showNotification("+" + product.nombre + " agregado");
-    } else {
-      const product = window.productos.find((p) => p.id === productId);
-      showNotification("- " + product.nombre + " eliminado");
-    }
   }
 
   function removeFromCart(productId) {
-    // Remove all items with this product ID
     const initialCount = cart.length;
     cart = cart.filter((item) => item.id !== productId);
     const removedCount = initialCount - cart.length;
     cartCount = cart.length;
 
     updateCartCount();
-
-    // Update cart modal if open (sin cerrar/reabrir)
     updateCartModalContent();
-
-    // Guardar en localStorage
     saveCart();
 
-    const product = window.productos.find((p) => p.id === productId);
-    showNotification(removedCount + " x " + product.nombre + " eliminado(s)");
+    if (removedCount > 0 && typeof showNotification === 'function') {
+      const product = window.productos?.find((p) => p.id === productId);
+      if (product) {
+        showNotification(`${removedCount} x ${product.nombre} eliminado(s)`);
+      }
+    }
   }
 
   function updateCartModalContent() {
     const cartModal = document.querySelector(".cart-modal");
     if (!cartModal) return;
 
-    // Agrupar productos actualizados
     const groupedCart = groupCart(cart);
 
     // Actualizar cantidades y subtotales
@@ -301,7 +387,7 @@
     // Remover items con cantidad 0
     const itemsToRemove = cartModal.querySelectorAll(".cart-item");
     itemsToRemove.forEach((itemEl) => {
-      const productId = parseInt(itemEl.getAttribute("data-product-id"));
+      const productId = parseInt(itemEl.getAttribute("data-product-id"), 10);
       if (!groupedCart[productId]) {
         itemEl.remove();
       }
@@ -316,5 +402,16 @@
   window.clearCart = clearCart;
   window.updateCartQuantity = updateCartQuantity;
   window.removeFromCart = removeFromCart;
+
+  // Inicializar contador cuando carga la página
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('🛒 Cart.js inicializado');
+    console.log('📦 Carrito tiene', cartCount, 'items');
+    
+    // Esperar a que se cree el floating cart
+    setTimeout(() => {
+      updateCartCount();
+    }, 500);
+  });
 
 })();
